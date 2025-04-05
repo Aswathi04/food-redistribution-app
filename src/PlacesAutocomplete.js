@@ -4,7 +4,6 @@ import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocom
 const PlacesAutocomplete = ({ onSelect }) => {
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-  // Load the Google Maps script with Places library
   useEffect(() => {
     // Check if script is already loaded
     if (window.google && window.google.maps && window.google.maps.places) {
@@ -14,10 +13,19 @@ const PlacesAutocomplete = ({ onSelect }) => {
 
     const script = document.createElement('script');
     // Using the React environment variable format
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+    const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
-    script.onload = () => setIsScriptLoaded(true);
+    
+    script.onload = () => {
+      setIsScriptLoaded(true);
+      console.log("Google Maps script loaded successfully");
+    };
+    
+    script.onerror = (error) => {
+      console.error("Error loading Google Maps script:", error);
+    };
     
     document.head.appendChild(script);
     
@@ -77,10 +85,6 @@ const PlacesAutocomplete = ({ onSelect }) => {
       );
     });
 
-  if (!isScriptLoaded) {
-    return <div>Loading Places API...</div>;
-  }
-
   return (
     <div>
       <input
@@ -91,8 +95,25 @@ const PlacesAutocomplete = ({ onSelect }) => {
         style={{ width: '100%', padding: '8px' }}
       />
       
+      {!isScriptLoaded && (
+        <div style={{ color: '#999', fontSize: '0.8rem', marginTop: '4px' }}>
+          Loading location search...
+        </div>
+      )}
+      
       {status === "OK" && (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, border: '1px solid #ccc', maxHeight: '200px', overflowY: 'auto' }}>
+        <ul style={{ 
+          listStyle: 'none', 
+          margin: 0, 
+          padding: 0, 
+          border: '1px solid #ccc', 
+          maxHeight: '200px', 
+          overflowY: 'auto',
+          position: 'absolute',
+          width: 'calc(100% - 2px)',
+          zIndex: 1000,
+          backgroundColor: 'white'
+        }}>
           {renderSuggestions()}
         </ul>
       )}
