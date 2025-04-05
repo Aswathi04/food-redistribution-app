@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
-import { loadGoogleMaps } from './utils/googleMapsLoader';
+import { loadGoogleMaps } from './utils/googleMapsLoader'; // Ensure this utility is used
 
 const PlacesAutocomplete = ({ onSelect }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -22,7 +22,7 @@ const PlacesAutocomplete = ({ onSelect }) => {
       componentRestrictions: { country: ['us'] }, // Restrict to US addresses
     },
     debounce: 300,
-    enabled: isLoaded // Only enable when library is loaded
+    enabled: isLoaded, // Only enable when library is loaded
   });
 
   const handleInput = (e) => {
@@ -72,19 +72,21 @@ const PlacesAutocomplete = ({ onSelect }) => {
               padding: '8px',
               marginBottom: '8px',
               borderRadius: '4px',
-              border: '1px solid #ccc'
+              border: '1px solid #ccc',
             }}
           />
           {status === 'OK' && (
-            <ul style={{
-              listStyle: 'none',
-              margin: 0,
-              padding: 0,
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              maxHeight: '200px',
-              overflowY: 'auto'
-            }}>
+            <ul
+              style={{
+                listStyle: 'none',
+                margin: 0,
+                padding: 0,
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                maxHeight: '200px',
+                overflowY: 'auto',
+              }}
+            >
               {renderSuggestions()}
             </ul>
           )}
