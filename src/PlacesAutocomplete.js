@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
+import { loadGoogleMaps } from './utils/googleMapsLoader';
 
 const PlacesAutocomplete = ({ onSelect }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    loadGoogleMaps()
+      .then(() => setIsLoaded(true))
+      .catch(err => console.error('Error loading Google Maps:', err));
+  }, []);
+
   const {
     ready,
     value,
@@ -10,9 +19,10 @@ const PlacesAutocomplete = ({ onSelect }) => {
     clearSuggestions,
   } = usePlacesAutocomplete({
     requestOptions: {
-      /* Define search scope here */
+      componentRestrictions: { country: ['us'] }, // Restrict to US addresses
     },
     debounce: 300,
+    enabled: isLoaded // Only enable when library is loaded
   });
 
   const handleInput = (e) => {
@@ -48,13 +58,38 @@ const PlacesAutocomplete = ({ onSelect }) => {
 
   return (
     <div>
-      <input
-        value={value}
-        onChange={handleInput}
-        disabled={!ready}
-        placeholder="Enter an address"
-      />
-      {status === 'OK' && <ul>{renderSuggestions()}</ul>}
+      {!isLoaded ? (
+        <div>Loading Places API...</div>
+      ) : (
+        <>
+          <input
+            value={value}
+            onChange={handleInput}
+            disabled={!ready}
+            placeholder="Enter an address"
+            style={{
+              width: '100%',
+              padding: '8px',
+              marginBottom: '8px',
+              borderRadius: '4px',
+              border: '1px solid #ccc'
+            }}
+          />
+          {status === 'OK' && (
+            <ul style={{
+              listStyle: 'none',
+              margin: 0,
+              padding: 0,
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              maxHeight: '200px',
+              overflowY: 'auto'
+            }}>
+              {renderSuggestions()}
+            </ul>
+          )}
+        </>
+      )}
     </div>
   );
 };
