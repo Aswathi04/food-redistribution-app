@@ -1,35 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
-import { loadGoogleMaps } from './utils/googleMapsLoader'; // Ensure this utility is used
 
 const PlacesAutocomplete = ({ onSelect }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
+  // Load the Google Maps script with Places library
   useEffect(() => {
-    loadGoogleMaps()
-      .then(() => setIsLoaded(true))
-      .catch(err => console.error('Error loading Google Maps:', err));
+    // Check if script is already loaded
+    if (window.google && window.google.maps && window.google.maps.places) {
+      setIsScriptLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    // Using the React environment variable format
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setIsScriptLoaded(true);
+    
+    document.head.appendChild(script);
+    
+    return () => {
+      // Clean up script if component unmounts before loading
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
   }, []);
 
+  // Only use Places Autocomplete when script is loaded
   const {
     ready,
     value,
     suggestions: { status, data },
     setValue,
-    clearSuggestions,
+    clearSuggestions
   } = usePlacesAutocomplete({
-    requestOptions: {
-      componentRestrictions: { country: ['us'] }, // Restrict to US addresses
-    },
+    requestOptions: {},
     debounce: 300,
-    enabled: isLoaded, // Only enable when library is loaded
+    enabled: isScriptLoaded // Only enable when script is loaded
   });
 
   const handleInput = (e) => {
     setValue(e.target.value);
   };
 
-  const handleSelect = async (description) => {
+  const handleSelect = ({ description }) => async () => {
     setValue(description, false);
     clearSuggestions();
 
@@ -38,7 +55,7 @@ const PlacesAutocomplete = ({ onSelect }) => {
       const { lat, lng } = await getLatLng(results[0]);
       onSelect({ address: description, lat, lng });
     } catch (error) {
-      console.error('Error: ', error);
+      console.error("Error: ", error);
     }
   };
 
@@ -46,51 +63,38 @@ const PlacesAutocomplete = ({ onSelect }) => {
     data.map((suggestion) => {
       const {
         place_id,
-        structured_formatting: { main_text, secondary_text },
+        structured_formatting: { main_text, secondary_text }
       } = suggestion;
 
       return (
-        <li key={place_id} onClick={() => handleSelect(suggestion.description)}>
+        <li
+          key={place_id}
+          onClick={handleSelect(suggestion)}
+          style={{ cursor: 'pointer', padding: '8px', borderBottom: '1px solid #eee' }}
+        >
           <strong>{main_text}</strong> <small>{secondary_text}</small>
         </li>
       );
     });
 
+  if (!isScriptLoaded) {
+    return <div>Loading Places API...</div>;
+  }
+
   return (
     <div>
-      {!isLoaded ? (
-        <div>Loading Places API...</div>
-      ) : (
-        <>
-          <input
-            value={value}
-            onChange={handleInput}
-            disabled={!ready}
-            placeholder="Enter an address"
-            style={{
-              width: '100%',
-              padding: '8px',
-              marginBottom: '8px',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-            }}
-          />
-          {status === 'OK' && (
-            <ul
-              style={{
-                listStyle: 'none',
-                margin: 0,
-                padding: 0,
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                maxHeight: '200px',
-                overflowY: 'auto',
-              }}
-            >
-              {renderSuggestions()}
-            </ul>
-          )}
-        </>
+      <input
+        value={value}
+        onChange={handleInput}
+        disabled={!ready}
+        placeholder="Enter a location"
+        style={{ width: '100%', padding: '8px' }}
+      />
+      
+      {status === "OK" && (
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, border: '1px solid #ccc', maxHeight: '200px', overflowY: 'auto' }}>
+          {renderSuggestions()}
+        </ul>
       )}
     </div>
   );
