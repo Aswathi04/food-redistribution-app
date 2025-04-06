@@ -60,7 +60,7 @@ function App() {
           <div className="content">
             <Routes>
               <Route path="/" element={<div className="home-page">
-                <h1></h1>
+                
                 <p>Connecting those with excess food to those in need</p>
                 {!user && (
                   <div className="cta-buttons">
