@@ -1,53 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
+import { loadGoogleMaps, isGoogleMapsLoaded } from './utils/googleMapsLoader';
 
 const PlacesAutocomplete = ({ onSelect }) => {
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(isGoogleMapsLoaded());
 
   useEffect(() => {
-    // Check if script is already loaded
-    if (window.google && window.google.maps && window.google.maps.places) {
-      setIsScriptLoaded(true);
-      return;
+    if (!isLoaded) {
+      loadGoogleMaps().then(() => setIsLoaded(true));
     }
+  }, [isLoaded]);
 
-    const script = document.createElement('script');
-    // Using the React environment variable format
-    const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
-      setIsScriptLoaded(true);
-      console.log("Google Maps script loaded successfully");
-    };
-    
-    script.onerror = (error) => {
-      console.error("Error loading Google Maps script:", error);
-    };
-    
-    document.head.appendChild(script);
-    
-    return () => {
-      // Clean up script if component unmounts before loading
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
-    };
-  }, []);
-
-  // Only use Places Autocomplete when script is loaded
   const {
     ready,
     value,
     suggestions: { status, data },
     setValue,
-    clearSuggestions
+    clearSuggestions,
   } = usePlacesAutocomplete({
     requestOptions: {},
     debounce: 300,
-    enabled: isScriptLoaded // Only enable when script is loaded
+    enabled: isLoaded
   });
 
   const handleInput = (e) => {
@@ -95,7 +68,7 @@ const PlacesAutocomplete = ({ onSelect }) => {
         style={{ width: '100%', padding: '8px' }}
       />
       
-      {!isScriptLoaded && (
+      {!isLoaded && (
         <div style={{ color: '#999', fontSize: '0.8rem', marginTop: '4px' }}>
           Loading location search...
         </div>
